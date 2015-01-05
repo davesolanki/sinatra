@@ -2,19 +2,12 @@ require 'sinatra'
 require 'sinatra/reloader' if development?
 require 'sass'
 require 'slim'
+require 'pony'
 require './song'
 
 
-get '/environment' do
-  if development?
-    "development"
-  elsif production?
-    "production"
-  elsif test?
-	"test" 
-  else
-  "Who knows what environment you're in!"
-  end
+before do
+  set_title
 end
 
 configure do
@@ -25,9 +18,29 @@ end
 
 configure :development do
   DataMapper.setup(:default, "sqlite3://#{Dir.pwd}/development.db")
+  set :email_address => 'smtp.gmail.com',
+      :email_user_name => 'daz',
+      :email_password => 'secret',
+      :email_domain => 'localhost.localdomain'
 end
 configure :production do
   DataMapper.setup(:default, ENV['DATABASE_URL'])
+  set :email_address => 'smtp.sendgrid.net',
+      :email_user_name => ENV['SENDGRID_USERNAME'],
+      :email_password => ENV['SENDGRID_PASSWORD'],
+      :email_domain => 'heroku.com'
+end
+
+get '/environment' do
+  if development?
+    "development"
+  elsif production?
+    "production"
+  elsif test?
+  "test" 
+  else
+  "Who knows what environment you're in!"
+  end
 end
 
 get '/login' do
@@ -37,12 +50,20 @@ end
 post '/login' do
   if params[:username] == settings.username && params[:password] == settings.password 
   	 session[:admin] = true 
-  	 redirect to('/songs')
-  
+  	 redirect to('/songs')  
   else
     slim :login
   end 
+end
 
+get '/contact' do
+  erb :contact
+end
+
+post '/contact' do
+  send_message
+  flash[:notice] = "Thank you for your message. We'll be in touch soon."
+  redirect to('/')
 end
 
 get '/logout' do
@@ -70,29 +91,10 @@ get '/about' do
 	erb :about
 end
 
-get '/contact' do
-	erb :contact
-end
 
 get '/songs' do
 	@songs = Song.all
 	erb :songs
-end
-
-get '/songs/new' do
-  halt(401,'Not Authorized') unless session[:admin]
-  @song = Song.new
-  slim :new_song
-end
-
-get '/songs/:id' do
-	@song = Song.get(params[:id])
-	slim :show_song
-end
-
-get '/songs/:id/edit' do
-  @song = Song.get(params[:id])
-  slim :edit_song
 end
 
 #---------------------------------------------------------
@@ -110,7 +112,26 @@ helpers do
   def set_title
   @title ||= "Songs By Sinatra"
   end
-  
+
+
+  def send_message
+  Pony.mail(
+  :from => params[:name] + "<" + params[:email] + ">", 
+  :to => 'daz@gmail.com',
+  :subject => params[:name] + " has contacted you", 
+  :body => params[:message],
+  :port => '587',
+  :via => :smtp,
+  :via_options => {
+    :address => 'smtp.gmail.com', 
+    :port => '587', 
+    :enable_starttls_auto => true,
+    :user_name => 'daz',
+    :password => 'secret',
+    :authentication => :plain,
+    :domain => 'localhost.localdomain'
+}) end
 end
 
 
+#----------------------------------------------------------

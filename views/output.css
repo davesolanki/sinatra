@@ -36,4 +36,14 @@ label {
 p {
   font: 13px/1.4 Helvetica, Arial, sans-serif; }
 
+.flash {
+  width: 600px;
+  padding: 5px;
+  font-weight: bold;
+  margin: 20px;
+  background: lighten($red, 60%);
+  color: $red;
+  border: 1px solid $red;
+}
+
 /*# sourceMappingURL=output.css.map */
