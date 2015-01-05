@@ -1,0 +1,21 @@
+
+<% title="Songs By Sinatra" %>
+<!doctype html>
+<html lang="en">
+<head>
+ <title><%= @title %></title>
+<%= css :output %>
+ <meta charset="utf-8">
+</head>
+<body>
+ <header>
+ <h1><%= @title || title %></h1>
+  <%= erb :nav %>
+
+ 
+ </header>
+  <section>
+ <%= yield %>
+ </section>
+</body>
+</html>
